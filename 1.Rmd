@@ -1,0 +1,105 @@
+---
+title: "Practical Machine Learning"
+author: "Jahnavi Kodavanti"
+date: "27/08/2020"
+output: html_document
+---
+
+
+**loading packages**
+
+```{r load, include=TRUE}
+library(caret)
+library(plyr)
+library(dplyr)
+library(rpart)
+library(lattice)
+library(ggplot2)
+library(RGtk2)
+library(randomForest)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+library(e1071)
+```
+
+**loading data**
+
+```{r read,include=TRUE}
+set.seed(12)
+trainingset <- read.csv("pml-training.csv",
+na.strings=c("NA","#DIV/0!", ""))
+testingset <- read.csv("pml-testing.csv", 
+na.strings=c("NA","#DIV/0!", ""))
+trainingset<-trainingset[,colSums(is.na(trainingset)) == 0]
+testingset <-testingset[,colSums(is.na(testingset)) == 0]
+```
+
+Training data set-19622 observations and 60 variables. 
+Testing data set-20 observations and 60 variables.
+
+**plot**
+
+```{r bar,include=TRUE}
+groupByClasse <- trainingset %>% group_by(classe) %>% summarise(counts = n())
+g <- ggplot(groupByClasse, aes(x = classe, y = counts)) + geom_bar(stat = "identity")
+g <- g + geom_bar(stat = "identity",col="red")
+g <- g + ggtitle("Total number of records for each groups")
+g <- g + xlab("Groups")
+g <- g + ylab("Counts")
+plot(g)
+```
+
+
+
+```{r part,include=TRUE}
+trainingset   <-trainingset[,-c(1:7)]
+testingset <-testingset[,-c(1:7)]
+inTrain <- createDataPartition(trainingset$classe, p = 0.7, list = FALSE)
+train <- trainingset[inTrain, ]
+valid <- trainingset[-inTrain, ]
+
+```
+
+**classification tree**
+
+```{r print,include=TRUE}
+control <- trainControl(method = "cv", number = 5)
+fit_rpart <- train(classe ~ ., data = train, method = "rpart", 
+                   trControl = control)
+print(fit_rpart, digits = 4)
+
+```
+
+```{r plot,include=TRUE}
+
+fancyRpartPlot(fit_rpart$finalModel)
+```
+
+**decision Tree**
+
+```{r tree,include=TRUE}
+modelTree <- rpart(classe ~ ., data = train, method = "class")
+rpart.plot(modelTree, main="Classification Tree", extra=102, under=TRUE, faclen=0)
+```
+
+
+```{r prediction,include=TRUE}
+predictTree <- predict(modelTree,newdata=valid,class="class")
+head(predictTree)
+summary(predictTree)
+```
+
+
+```{r plotting,include=TRUE}
+plot(predictTree)
+```
+
+**training with decision tree**
+```{r dt,include=TRUE}
+decisionTreeModel <- rpart(classe ~ ., data=train, method="class")
+fancyRpartPlot(decisionTreeModel)
+```
+
+*conclusion*
+Using different algorithms we can predict values.
